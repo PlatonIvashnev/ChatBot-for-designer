@@ -3,16 +3,62 @@ from telebot import types
 import webbrowser
 
 bot = telebot.TeleBot('7159383606:AAEtWZ_TEQBWAM2STMO4PdP4_Aanhis8hYQ')
+user_id_2 = '338220845'
 
+user_steps = {}  # Dictionary path for user_1
+user_images = {}  # Dictionary for image user_1
+
+# Bot says HI after /start and show initial buttons
 @bot.message_handler(commands=['start'])
-
-
-def main(message):
+def main_initial(message):
+    user_steps[message.chat.id] = []
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton('Услуга 1', text='Дескрипшн 1 и 100'))
-    markup.add(types.InlineKeyboardButton('Услуга 2', text='Дескрипшн 2 и 200'))
+    markup.add(types.InlineKeyboardButton('Услуга 1', callback_data='service_1'))
+    markup.add(types.InlineKeyboardButton('Услуга 2', callback_data='service_2'))
+    markup.add(types.InlineKeyboardButton('Услуга 3', callback_data='service_3'))
     bot.send_message(message.chat.id, f'Привет, {message.from_user.first_name}', reply_markup=markup)
 
+# Second set of buttons
+def create_second_buttons():
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("Европа", callback_data='europe'))
+    markup.add(types.InlineKeyboardButton("Россия", callback_data='russia'))
+    markup.add(types.InlineKeyboardButton("Казахстан", callback_data='kazakhstan'))
+    return markup
+
+# Buttons for User2 confirmation
+def create_confirmation_buttons():
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("Да", callback_data='yes'))
+    markup.add(types.InlineKeyboardButton("Нет", callback_data='no'))
+    return markup
+
+# Buttons pushing handler
+@bot.callback_query_handler(func=lambda call: True)
+def handle_query(call):
+    if call.data.startswith('service_'):
+        step = f"Услуга {call.data[-1]}"
+        user_steps[call.message.chat.id] = [step]
+        bot.send_message(call.message.chat.id, f"Вот ваш заготовленный текст для {step}!", reply_markup=create_second_buttons())
+    elif call.data in ['europe', 'russia', 'kazakhstan']:
+        step = 'Европа' if call.data == 'europe' else 'Россия' if call.data == 'russia' else 'Казахстан'
+        user_steps[call.message.chat.id].append(step)
+        bot.send_message(call.message.chat.id, f"Вы выбрали {step}. Пожалуйста, отправьте изображение.")
+    elif call.data in ['yes', 'no']:
+        if call.data == 'yes':
+            bot.send_message(user_images[call.message.chat.id]['from'], "Вот ссылка, закрепленная за кнопкой 'Услуга 2': [http://vassagraphicdesign.tilda.ws/]")
+        else:
+            bot.send_message(user_images[call.message.chat.id]['from'], "Извините, ваш запрос был отклонен.")
+        bot.send_message(call.message.chat.id, "Ваш ответ был передан.")
+
+# Image handler
+@bot.message_handler(content_types=['photo'])
+def handle_photo(message):
+    if message.chat.id in user_steps and user_steps[message.chat.id][-1] in ['Европа', 'Россия', 'Казахстан']:
+        photo_id = message.photo[-1].file_id
+        user_images[user_id_2] = {'from': message.chat.id, 'steps': user_steps[message.chat.id], 'photo_id': photo_id}
+        bot.send_photo(user_id_2, photo_id, caption=f"Пользователь прошел путь {' - '.join(user_steps[message.chat.id])}. Примите изображение?", reply_markup=create_confirmation_buttons())
+        bot.send_message(message.chat.id, "Ваше изображение отправлено на проверку.")
 
 def info(message):
     if message.text.lower() == 'привет':
