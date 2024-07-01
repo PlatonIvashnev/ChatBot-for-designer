@@ -2,8 +2,8 @@ import telebot
 from telebot import types
 import webbrowser
 
-bot = telebot.TeleBot('')
-user_id_2 = '338220845'
+bot = telebot.TeleBot('Token')
+user_id_2 = 'Id'
 
 user_steps = {}  # Dictionary path for user_1
 user_images = {}  # Dictionary for image user_1
@@ -45,11 +45,19 @@ def handle_query(call):
         user_steps[call.message.chat.id].append(step)
         bot.send_message(call.message.chat.id, f"Вы выбрали {step}. Пожалуйста, отправьте изображение.")
     elif call.data in ['yes', 'no']:
-        if call.data == 'yes':
-            bot.send_message(user_images[call.message.chat.id]['from'], "Вот ссылка, закрепленная за кнопкой 'Услуга 2': [http://vassagraphicdesign.tilda.ws/]")
+        # Логирование для отладки
+        print(f"Received {call.data} from user_id_2")
+        user_image_info = user_images.get(user_id_2, None)
+
+        if user_image_info:
+            if call.data == 'yes':
+                bot.send_message(user_image_info['from'], "Ваше изображение принято. Вот ссылка: [http://vassagraphicdesign.tilda.ws/]")
+            else:
+                bot.send_message(user_image_info['from'], "Извините, ваше изображение отклонено.")
+            bot.send_message(call.message.chat.id, "Ваш ответ был передан.")
         else:
-            bot.send_message(user_images[call.message.chat.id]['from'], "Извините, ваш запрос был отклонен.")
-        bot.send_message(call.message.chat.id, "Ваш ответ был передан.")
+            # Логирование для отладки
+            print("User image info not found.")
 
 # Image handler
 @bot.message_handler(content_types=['photo'])
@@ -57,8 +65,11 @@ def handle_photo(message):
     if message.chat.id in user_steps and user_steps[message.chat.id][-1] in ['Европа', 'Россия', 'Казахстан']:
         photo_id = message.photo[-1].file_id
         user_images[user_id_2] = {'from': message.chat.id, 'steps': user_steps[message.chat.id], 'photo_id': photo_id}
-        bot.send_photo(user_id_2, photo_id, caption=f"Пользователь прошел путь {' - '.join(user_steps[message.chat.id])}. Примите изображение?", reply_markup=create_confirmation_buttons())
-        bot.send_message(message.chat.id, "Ваше изображение отправлено на проверку.")
+        try:
+            bot.send_photo(user_id_2, photo_id, caption=f"Пользователь прошел путь {' - '.join(user_steps[message.chat.id])}. Примите изображение?", reply_markup=create_confirmation_buttons())
+            bot.send_message(message.chat.id, "Ваше изображение отправлено на проверку.")
+        except telebot.apihelper.ApiTelegramException as e:
+            bot.send_message(message.chat.id, f"Ошибка отправки изображения: {e}")
 
 def info(message):
     if message.text.lower() == 'привет':
