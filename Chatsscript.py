@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 import webbrowser
 
-bot = telebot.TeleBot('7159383606:AAEtWZ_TEQBWAM2STMO4PdP4_Aanhis8hYQ')
+bot = telebot.TeleBot('')
 user_id_2 = '338220845'
 
 user_steps = {}  # Dictionary path for user_1
