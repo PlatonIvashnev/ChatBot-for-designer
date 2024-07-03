@@ -1,12 +1,18 @@
 import telebot
 from telebot import types
-import webbrowser
 
 bot = telebot.TeleBot('Token')
 user_id_2 = 'Id'
 
 user_steps = {}  # Dictionary path for user_1
 user_images = {}  # Dictionary for image user_1
+
+#Services links
+SERVICE_LINKS = {
+    'Услуга 1': 'Link 1',
+    'Услуга 2': 'Link 2',
+    'Услуга 3': 'Link 3'
+}
 
 # Bot says HI after /start and show initial buttons
 @bot.message_handler(commands=['start'])
@@ -50,8 +56,11 @@ def handle_query(call):
         user_image_info = user_images.get(user_id_2, None)
 
         if user_image_info:
+            chosen_service = user_image_info['steps'][0]
+            service_link = SERVICE_LINKS.get(chosen_service, 'Ссылка не найдена')
+
             if call.data == 'yes':
-                bot.send_message(user_image_info['from'], "Ваше изображение принято. Вот ссылка: [http://vassagraphicdesign.tilda.ws/]")
+                bot.send_message(user_image_info['from'], f"Ваше изображение принято. Вот ссылка: {service_link}")
             else:
                 bot.send_message(user_image_info['from'], "Извините, ваше изображение отклонено.")
             bot.send_message(call.message.chat.id, "Ваш ответ был передан.")
